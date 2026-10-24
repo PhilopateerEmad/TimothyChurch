@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Attendance Management System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header className="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="bg-indigo-600 p-2 rounded-lg font-bold text-white">EduTrack</div>
+        <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">Google Sheets Backend</span>
+      </div>
+
+      <!-- Navigation & Mode Controls -->
+      <div class="flex items-center space-x-3 text-sm">
+        <select id="roleSelector" onchange="switchRole()" class="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 focus:outline-none">
+          <option value="PUBLIC">Guest / Self Check-In Mode</option>
+          <option value="CLASS_ADMIN">Class Admin (Prof. Sarah - CS 101)</option>
+          <option value="SUPER_ADMIN">Super Admin (All Access)</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner -->
+  <div id="statusBanner" class="bg-indigo-50 border-b border-indigo-100 py-2 px-4 text-xs font-medium text-indigo-900 text-center">
+    Current Mode: <span id="currentRoleLabel" class="font-bold">Guest / Self Check-In Mode</span>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+    <!-- ADMIN PANEL VIEW -->
+    <section id="adminView" class="hidden space-y-6">
+      
+      <!-- Controls Toolbar -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Class</label>
+            <select id="classSelect" onchange="renderStudents()" class="bg-slate-50 border border-slate-300 rounded-xl p-2 text-sm font-semibold">
+              <option value="CS-101">101-CS: Intro to Computer Science</option>
+              <option value="MATH-202">202-MATH: Advanced Calculus</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+            <input type="date" id="attendanceDate" class="bg-slate-50 border border-slate-300 rounded-xl p-2 text-sm font-semibold">
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="markAll('Present')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold">
+            Mark All Present
+          </button>
+          <button onclick="markAll('Absent')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs font-bold">
+            Mark All Absent
+          </button>
+          <button onclick="fetchStudentsFromSheets()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-bold">
+            Sync from Sheets
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Table -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+              <th class="py-3 px-4">Roll No</th>
+              <th class="py-3 px-4">Name</th>
+              <th class="py-3 px-4 text-center">Status</th>
+              <th class="py-3 px-4">Remarks</th>
+              <th class="py-3 px-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody" class="divide-y divide-slate-100 text-sm">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PUBLIC SELF CHECK-IN VIEW -->
+    <section id="publicView" class="max-w-md mx-auto space-y-6 py-8">
+      <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 text-center space-y-4">
+        <h2 class="text-xl font-black text-slate-800">Student Self Check-In</h2>
+        <p class="text-xs text-slate-500">Enter your Roll Number or ID below to check in to your active class.</p>
+        
+        <div id="checkinAlert" class="hidden p-3 text-xs rounded-xl font-bold"></div>
+
+        <form onsubmit="handleSelfCheckin(event)" class="space-y-3 text-left">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Student Roll No / ID</label>
+            <input type="text" id="checkinId" required placeholder="e.g. CS-001" class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm">
+          </div>
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-md text-sm">
+            Submit Check-In
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script File Link -->
+  <script src="app.js"></script>
+</body>
+</html>
