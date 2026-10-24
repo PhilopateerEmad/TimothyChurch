@@ -1,4 +1,4 @@
-// CONFIGURATION: Replace this URL with your Google Apps Script Web App Deployment URL
+// CONFIGURATION: Published Google Apps Script Web App Endpoint
 const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbxDtd5TPTrr9UEJAf9Wge_FsUltBBgZfI6B3d9VDZ2ZjIODj2jmfGSpy1XBQiA_dgtgYQ/exec";
 
 // Initial Mock Data (Fallback if Sheets API is not configured yet)
@@ -41,7 +41,7 @@ function renderStudents() {
 
   const filtered = students.filter(s => s.classId === selectedClass);
 
-  filtered.forEach((st, idx) => {
+  filtered.forEach((st) => {
     const tr = document.createElement("tr");
     tr.className = "hover:bg-slate-50";
     tr.innerHTML = `
@@ -83,11 +83,6 @@ function markAll(status) {
 
 // 1. Fetch Students from Google Sheets
 async function fetchStudentsFromSheets() {
-  if (GOOGLE_SCRIPT_API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-    alert("Please replace GOOGLE_SCRIPT_API_URL in app.js with your published Apps Script URL!");
-    return;
-  }
-
   try {
     const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
     const data = await res.json();
@@ -102,11 +97,6 @@ async function fetchStudentsFromSheets() {
 async function saveSingleRecord(rollNo) {
   const st = students.find(s => s.rollNo === rollNo);
   const date = document.getElementById("attendanceDate").value;
-
-  if (GOOGLE_SCRIPT_API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-    alert(`[Simulated] Record for ${st.name} saved! (Set GOOGLE_SCRIPT_API_URL in app.js to sync directly to Google Sheets).`);
-    return;
-  }
 
   try {
     const payload = {
