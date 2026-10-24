@@ -1,13 +1,47 @@
 // CONFIGURATION: Published Google Apps Script Web App Endpoint
-const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbxcG4AQbwhjdv1u1BxejeDyBtayaETr7zubY2bcrHCsVG0yrfrjyoWFDD5mcOrI02uQSw/exec";
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbw6zFrADRca6RrvxpLzjT56f8GWO_nL2nd2nkqbjFOfgCjskNsfR0SAnrBncXHc1Sa6/exec";
 
+let classesList = [];
 let students = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("attendanceDate").value = new Date().toISOString().split('T')[0];
-  await fetchStudentsFromSheets();
+  await loadDatabase();
   switchRole();
 });
+
+// Load Classes and Students dynamically from Google Sheets
+async function loadDatabase() {
+  try {
+    console.log("Loading database from Google Sheets...");
+    
+    // Fetch Classes
+    const classRes = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getClasses`);
+    classesList = await classRes.json();
+    populateClassDropdown();
+
+    // Fetch Students
+    const studentRes = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
+    students = await studentRes.json();
+    
+    console.log(`Loaded ${classesList.length} classes and ${students.length} students.`);
+    renderStudents();
+  } catch (err) {
+    console.error("Error loading database from Google Sheets:", err);
+  }
+}
+
+function populateClassDropdown() {
+  const select = document.getElementById("classSelect");
+  select.innerHTML = "";
+  
+  classesList.forEach(cls => {
+    const opt = document.createElement("option");
+    opt.value = cls.classId; // e.g. "CLS-101"
+    opt.textContent = `${cls.classId}: ${cls.className}`;
+    select.appendChild(opt);
+  });
+}
 
 function switchRole() {
   const role = document.getElementById("roleSelector").value;
@@ -78,26 +112,6 @@ function markAll(status) {
 }
 
 // --- GOOGLE SHEETS API INTEGRATION ---
-
-async function fetchStudentsFromSheets() {
-  try {
-    console.log("Fetching students from Google Sheets...");
-    const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
-    const data = await res.json();
-    
-    console.log("Received data response:", data);
-    
-    if (Array.isArray(data) && data.length > 0) {
-      students = data;
-      console.log(`Successfully loaded ${students.length} students.`);
-      renderStudents();
-    } else {
-      console.warn("Received empty student array from Google Sheet.");
-    }
-  } catch (err) {
-    console.error("Error fetching students from Google Sheets:", err);
-  }
-}
 
 async function saveSingleRecord(studentId) {
   const st = students.find(s => s.studentId === studentId);
