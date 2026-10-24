@@ -1,5 +1,5 @@
-// CONFIGURATION: Published Google Apps Script Web App Endpoint
-const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbw6zFrADRca6RrvxpLzjT56f8GWO_nL2nd2nkqbjFOfgCjskNsfR0SAnrBncXHc1Sa6/exec";
+// CONFIGURATION: New Published Google Apps Script Web App Endpoint
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbyVkktsmaL5kJ-poHs6s3shd8p-mx6jiHmJUbs0EbiMCVslGnctBqZ8q35jT79stfkoxg/exec";
 
 let classesList = [];
 let students = [];
@@ -10,10 +10,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   switchRole();
 });
 
-// Load Classes and Students dynamically from Google Sheets
 async function loadDatabase() {
   try {
-    console.log("Loading database from Google Sheets...");
+    console.log("Fetching classes and students...");
     
     // Fetch Classes
     const classRes = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getClasses`);
@@ -24,10 +23,11 @@ async function loadDatabase() {
     const studentRes = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
     students = await studentRes.json();
     
-    console.log(`Loaded ${classesList.length} classes and ${students.length} students.`);
+    console.log(`Loaded successfully: ${classesList.length} classes, ${students.length} students.`);
     renderStudents();
   } catch (err) {
-    console.error("Error loading database from Google Sheets:", err);
+    console.error("Failed to load database from Google Sheets:", err);
+    alert("Could not load data from Google Sheets backend. Check console for details.");
   }
 }
 
@@ -37,7 +37,7 @@ function populateClassDropdown() {
   
   classesList.forEach(cls => {
     const opt = document.createElement("option");
-    opt.value = cls.classId; // e.g. "CLS-101"
+    opt.value = cls.classId; 
     opt.textContent = `${cls.classId}: ${cls.className}`;
     select.appendChild(opt);
   });
@@ -111,8 +111,6 @@ function markAll(status) {
   renderStudents();
 }
 
-// --- GOOGLE SHEETS API INTEGRATION ---
-
 async function saveSingleRecord(studentId) {
   const st = students.find(s => s.studentId === studentId);
   const date = document.getElementById("attendanceDate").value;
@@ -139,7 +137,7 @@ async function saveSingleRecord(studentId) {
     }
   } catch (err) {
     console.error("Error saving record:", err);
-    alert("Failed to save attendance. Check console for details.");
+    alert("Failed to save attendance.");
   }
 }
 
