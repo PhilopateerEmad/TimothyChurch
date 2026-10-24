@@ -1,4 +1,4 @@
-// CONFIGURATION: New Published Google Apps Script Web App Endpoint
+// CONFIGURATION: Published Google Apps Script Endpoint
 const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbzuOGYVYb-2qjZG6Y6PcCOh1geXHTOQDu9SzOG3B5SwoLDybacbF6Au5uqldorgfEXg3Q/exec";
 
 let students = [];
@@ -35,7 +35,7 @@ function renderStudents() {
   const filtered = students.filter(s => s.classId === selectedClass);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class in database.</td></tr>`;
     return;
   }
 
@@ -77,7 +77,7 @@ function markAll(status) {
   renderStudents();
 }
 
-// --- GOOGLE SHEETS API INTEGRATION (VIA GET) ---
+// --- GOOGLE SHEETS API INTEGRATION ---
 
 async function fetchStudentsFromSheets() {
   try {
@@ -85,11 +85,11 @@ async function fetchStudentsFromSheets() {
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       students = data;
-      console.log("Loaded students from Google Sheet:", students);
+      console.log("Students loaded from Google Sheet:", students);
       renderStudents();
     }
   } catch (err) {
-    console.error("Error fetching from Google Sheets:", err);
+    console.error("Error fetching students from Google Sheets:", err);
   }
 }
 
@@ -113,13 +113,12 @@ async function saveSingleRecord(studentId) {
     const result = await res.json();
     
     if (result.status === "success") {
-      alert(`Attendance for ${st.name} successfully saved to Google Sheet!`);
+      alert(`Attendance for ${st.name} (${st.studentId}) saved cleanly into Attendance_Logs!`);
     } else {
-      alert("Error saving attendance to Sheet.");
+      alert("Error saving record to Google Sheet.");
     }
   } catch (err) {
     console.error("Error saving record:", err);
-    alert("Failed to save attendance. Check console for details.");
   }
 }
 
