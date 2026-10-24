@@ -1,5 +1,5 @@
 // CONFIGURATION: Replace this URL with your Google Apps Script Web App Deployment URL
-const GOOGLE_SCRIPT_API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbwtuvc8mqkemeRnqlOzwl5I5CYQCdZ8Vk1ICgT25UhKoYDEnva4shNt6DuJADegwzWD_g/exec";
 
 // Initial Mock Data (Fallback if Sheets API is not configured yet)
 let students = [
