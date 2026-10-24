@@ -1,16 +1,13 @@
 // CONFIGURATION: Published Google Apps Script Web App Endpoint
-const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbxDtd5TPTrr9UEJAf9Wge_FsUltBBgZfI6B3d9VDZ2ZjIODj2jmfGSpy1XBQiA_dgtgYQ/exec";
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbytiUN5v7ueQjDVYEHw78W6yt47oq8_Ud5YZ9APnlFyptXj9QTsqazN_t-Hb5KGxFZpSQ/exec";
 
-// Initial Mock Data (Fallback if Sheets API is not configured yet)
-let students = [
-  { rollNo: "CS-001", name: "Alice Johnson", classId: "CS-101", email: "alice@student.edu", status: "Present", remarks: "" },
-  { rollNo: "CS-002", name: "Bob Smith", classId: "CS-101", email: "bob@student.edu", status: "Absent", remarks: "" },
-  { rollNo: "MT-001", name: "Charlie Brown", classId: "MATH-202", email: "charlie@student.edu", status: "Present", remarks: "" }
-];
+// Global student list populated dynamically from Google Sheets
+let students = [];
 
 // Initialize on page load
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("attendanceDate").value = new Date().toISOString().split('T')[0];
+  await fetchStudentsFromSheets();
   switchRole();
 });
 
@@ -33,7 +30,7 @@ function switchRole() {
   }
 }
 
-// Render student list into table
+// Render student list into table matching selected class (CLS-101 or CLS-202)
 function renderStudents() {
   const selectedClass = document.getElementById("classSelect").value;
   const tbody = document.getElementById("studentTableBody");
@@ -41,11 +38,16 @@ function renderStudents() {
 
   const filtered = students.filter(s => s.classId === selectedClass);
 
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class in database.</td></tr>`;
+    return;
+  }
+
   filtered.forEach((st) => {
     const tr = document.createElement("tr");
     tr.className = "hover:bg-slate-50";
     tr.innerHTML = `
-      <td class="py-3 px-4 font-mono font-bold text-xs">${st.rollNo}</td>
+      <td class="py-3 px-4 font-mono font-bold text-xs">${st.studentId} (${st.rollNo})</td>
       <td class="py-3 px-4 font-semibold">${st.name}</td>
       <td class="py-3 px-4 text-center">
         <span class="px-2.5 py-1 rounded text-xs font-bold ${
@@ -54,10 +56,10 @@ function renderStudents() {
         }">${st.status || 'Unmarked'}</span>
       </td>
       <td class="py-3 px-4">
-        <input type="text" value="${st.remarks || ''}" onchange="updateRemarks('${st.rollNo}', this.value)" placeholder="Add note..." class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs w-full">
+        <input type="text" value="${st.remarks || ''}" onchange="updateRemarks('${st.studentId}', this.value)" placeholder="Add note..." class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs w-full">
       </td>
       <td class="py-3 px-4 text-right">
-        <button onclick="saveSingleRecord('${st.rollNo}')" class="bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 px-3 py-1 rounded text-xs font-bold">
+        <button onclick="saveSingleRecord('${st.studentId}')" class="bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 px-3 py-1 rounded text-xs font-bold">
           Save to Sheet
         </button>
       </td>
@@ -66,8 +68,8 @@ function renderStudents() {
   });
 }
 
-function updateRemarks(rollNo, val) {
-  const st = students.find(s => s.rollNo === rollNo);
+function updateRemarks(studentId, val) {
+  const st = students.find(s => s.studentId === studentId);
   if (st) st.remarks = val;
 }
 
@@ -81,28 +83,31 @@ function markAll(status) {
 
 // --- GOOGLE SHEETS API INTEGRATION ---
 
-// 1. Fetch Students from Google Sheets
+// 1. Fetch Students from Google Sheets Database
 async function fetchStudentsFromSheets() {
   try {
     const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
     const data = await res.json();
-    console.log("Fetched rows from Google Sheets:", data);
-    alert("Successfully synced with Google Sheets database!");
+    if (Array.isArray(data) && data.length > 0) {
+      students = data;
+      console.log("Loaded students from Google Sheet:", students);
+      renderStudents();
+    }
   } catch (err) {
     console.error("Error fetching from Google Sheets:", err);
   }
 }
 
-// 2. Submit record back to Google Sheets
-async function saveSingleRecord(rollNo) {
-  const st = students.find(s => s.rollNo === rollNo);
+// 2. Submit Attendance Log back to Google Sheet
+async function saveSingleRecord(studentId) {
+  const st = students.find(s => s.studentId === studentId);
   const date = document.getElementById("attendanceDate").value;
 
   try {
     const payload = {
       action: "markAttendance",
       date: date,
-      studentId: st.rollNo,
+      studentId: st.studentId,
       classId: st.classId,
       status: st.status || "Present",
       remarks: st.remarks || "",
@@ -116,10 +121,11 @@ async function saveSingleRecord(rollNo) {
     
     const result = await res.json();
     if (result.status === "success") {
-      alert(`Attendance for ${st.name} successfully saved to Google Sheet!`);
+      alert(`Attendance for ${st.name} successfully saved to Google Sheet! Check your Attendance_Logs tab.`);
     }
   } catch (err) {
     console.error("Error saving record:", err);
+    alert("Failed to save attendance. Check console for details.");
   }
 }
 
@@ -129,7 +135,7 @@ function handleSelfCheckin(e) {
   const inputId = document.getElementById("checkinId").value.trim().toUpperCase();
   const alertBox = document.getElementById("checkinAlert");
 
-  const student = students.find(s => s.rollNo === inputId);
+  const student = students.find(s => s.studentId === inputId || s.rollNo.toUpperCase() === inputId);
 
   alertBox.classList.remove("hidden", "bg-emerald-100", "text-emerald-800", "bg-rose-100", "text-rose-800");
 
@@ -137,9 +143,9 @@ function handleSelfCheckin(e) {
     student.status = "Present";
     alertBox.classList.add("bg-emerald-100", "text-emerald-800");
     alertBox.textContent = `Check-in successful! Welcome, ${student.name}.`;
-    saveSingleRecord(student.rollNo);
+    saveSingleRecord(student.studentId);
   } else {
     alertBox.classList.add("bg-rose-100", "text-rose-800");
-    alertBox.textContent = "Roll Number / Student ID not found.";
+    alertBox.textContent = "Student ID or Roll Number not found in database.";
   }
 }
