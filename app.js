@@ -1,5 +1,5 @@
-// CONFIGURATION: Published Google Apps Script Endpoint
-const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbzuOGYVYb-2qjZG6Y6PcCOh1geXHTOQDu9SzOG3B5SwoLDybacbF6Au5uqldorgfEXg3Q/exec";
+// CONFIGURATION: Published Google Apps Script Web App Endpoint
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbxcG4AQbwhjdv1u1BxejeDyBtayaETr7zubY2bcrHCsVG0yrfrjyoWFDD5mcOrI02uQSw/exec";
 
 let students = [];
 
@@ -35,7 +35,7 @@ function renderStudents() {
   const filtered = students.filter(s => s.classId === selectedClass);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class in database.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for class ${selectedClass}.</td></tr>`;
     return;
   }
 
@@ -81,12 +81,18 @@ function markAll(status) {
 
 async function fetchStudentsFromSheets() {
   try {
+    console.log("Fetching students from Google Sheets...");
     const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
     const data = await res.json();
+    
+    console.log("Received data response:", data);
+    
     if (Array.isArray(data) && data.length > 0) {
       students = data;
-      console.log("Students loaded from Google Sheet:", students);
+      console.log(`Successfully loaded ${students.length} students.`);
       renderStudents();
+    } else {
+      console.warn("Received empty student array from Google Sheet.");
     }
   } catch (err) {
     console.error("Error fetching students from Google Sheets:", err);
@@ -113,12 +119,13 @@ async function saveSingleRecord(studentId) {
     const result = await res.json();
     
     if (result.status === "success") {
-      alert(`Attendance for ${st.name} (${st.studentId}) saved cleanly into Attendance_Logs!`);
+      alert(`Attendance for ${st.name} successfully saved to Attendance_Logs!`);
     } else {
-      alert("Error saving record to Google Sheet.");
+      alert("Error saving attendance to Sheet.");
     }
   } catch (err) {
     console.error("Error saving record:", err);
+    alert("Failed to save attendance. Check console for details.");
   }
 }
 
