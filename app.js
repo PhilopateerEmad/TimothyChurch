@@ -1,17 +1,14 @@
-// CONFIGURATION: Published Google Apps Script Web App Endpoint
-const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbytiUN5v7ueQjDVYEHw78W6yt47oq8_Ud5YZ9APnlFyptXj9QTsqazN_t-Hb5KGxFZpSQ/exec";
+// CONFIGURATION: New Published Google Apps Script Web App Endpoint
+const GOOGLE_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbzuOGYVYb-2qjZG6Y6PcCOh1geXHTOQDu9SzOG3B5SwoLDybacbF6Au5uqldorgfEXg3Q/exec";
 
-// Global student list populated dynamically from Google Sheets
 let students = [];
 
-// Initialize on page load
 document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("attendanceDate").value = new Date().toISOString().split('T')[0];
   await fetchStudentsFromSheets();
   switchRole();
 });
 
-// Role Switch Handler
 function switchRole() {
   const role = document.getElementById("roleSelector").value;
   const adminView = document.getElementById("adminView");
@@ -30,7 +27,6 @@ function switchRole() {
   }
 }
 
-// Render student list into table matching selected class (CLS-101 or CLS-202)
 function renderStudents() {
   const selectedClass = document.getElementById("classSelect").value;
   const tbody = document.getElementById("studentTableBody");
@@ -39,7 +35,7 @@ function renderStudents() {
   const filtered = students.filter(s => s.classId === selectedClass);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class in database.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">No students found for this class.</td></tr>`;
     return;
   }
 
@@ -81,9 +77,8 @@ function markAll(status) {
   renderStudents();
 }
 
-// --- GOOGLE SHEETS API INTEGRATION ---
+// --- GOOGLE SHEETS API INTEGRATION (VIA GET) ---
 
-// 1. Fetch Students from Google Sheets Database
 async function fetchStudentsFromSheets() {
   try {
     const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?action=getStudents`);
@@ -98,30 +93,29 @@ async function fetchStudentsFromSheets() {
   }
 }
 
-// 2. Submit Attendance Log back to Google Sheet
 async function saveSingleRecord(studentId) {
   const st = students.find(s => s.studentId === studentId);
   const date = document.getElementById("attendanceDate").value;
+  const role = document.getElementById("roleSelector").value;
 
   try {
-    const payload = {
+    const params = new URLSearchParams({
       action: "markAttendance",
       date: date,
       studentId: st.studentId,
       classId: st.classId,
       status: st.status || "Present",
       remarks: st.remarks || "",
-      markedBy: document.getElementById("roleSelector").value
-    };
-
-    const res = await fetch(GOOGLE_SCRIPT_API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
+      markedBy: role
     });
-    
+
+    const res = await fetch(`${GOOGLE_SCRIPT_API_URL}?${params.toString()}`);
     const result = await res.json();
+    
     if (result.status === "success") {
-      alert(`Attendance for ${st.name} successfully saved to Google Sheet! Check your Attendance_Logs tab.`);
+      alert(`Attendance for ${st.name} successfully saved to Google Sheet!`);
+    } else {
+      alert("Error saving attendance to Sheet.");
     }
   } catch (err) {
     console.error("Error saving record:", err);
@@ -129,7 +123,6 @@ async function saveSingleRecord(studentId) {
   }
 }
 
-// 3. Public Self Check-in
 function handleSelfCheckin(e) {
   e.preventDefault();
   const inputId = document.getElementById("checkinId").value.trim().toUpperCase();
